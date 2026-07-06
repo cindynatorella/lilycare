@@ -1,39 +1,39 @@
 from __future__ import annotations
 
-from typing import Any
-
-try:
-    import psycopg
-    from psycopg.rows import dict_row
-except ImportError:  # pragma: no cover - dependency may not be installed yet
-    psycopg = None
-    dict_row = None
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import URL, text
 
 from .config import DatabaseConfig, load_database_config
 
 
-# Create and return a PostgreSQL connection using the loaded app config.
-def get_connection(config: DatabaseConfig | None = None) -> Any:
-    if psycopg is None:
-        raise RuntimeError("psycopg is not installed yet. Add backend dependencies first.")
-
-    config = config or load_database_config()
-    return psycopg.connect(
-        host=config.host,
-        port=config.port,
-        dbname=config.database,
-        user=config.user,
-        password=config.password,
-        sslmode=config.sslmode,
-        row_factory=dict_row,
-    )
+db = SQLAlchemy()
 
 
-# Open a connection and run a very small query to confirm PostgreSQL is reachable.
-def test_connection(config: DatabaseConfig | None = None) -> bool:
-    raise NotImplementedError("TODO: Open a connection and return True when `SELECT 1` succeeds.")
+def build_database_url(config: DatabaseConfig | None = None) -> str:
+	config = load_database_config() or config
+
+	url = URL.create(
+		drivername="postgresql+psycopg",
+		username=config.user,
+		password=config.password,
+		host=config.host,
+		port=config.port,
+		database=config.database,
+		query={"sslmode": config.sslmode},
+	)
+
+	return url.render_as_string(hide_password=False)
 
 
-# Read the schema file and create the app tables in PostgreSQL.
-def initialize_database(config: DatabaseConfig | None = None) -> None:
-    raise NotImplementedError("TODO: Execute the SQL in backend/schema.sql against the database.")
+def configure_database(app, config: DatabaseConfig | None = None) -> None:
+	app.config["SQLALCHEMY_DATABASE_URI"] = build_database_url(config)
+	app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+	db.init_app(app)
+
+
+def test_connection(app) -> bool:
+	with app.app_context():
+		db.session.execute(text("SELECT 1"))
+
+	return True

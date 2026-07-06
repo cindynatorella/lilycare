@@ -2,10 +2,19 @@ from __future__ import annotations
 
 from .models import PetProfile
 
+from sqlalchemy import select
+
+from .db import db
 
 # Fetch Lily's single saved profile from PostgreSQL.
 def get_pet_profile() -> PetProfile | None:
-    raise NotImplementedError("TODO: Select Lily's profile row and return it as a PetProfile.")
+	statement = (
+		select(PetProfile)
+		.where(PetProfile.name == "Lily")
+		.limit(1)
+	)
+
+	return db.session.execute(statement).scalar_one_or_none()
 
 
 # Create Lily's profile row when the database is empty.

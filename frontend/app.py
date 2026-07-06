@@ -8,17 +8,31 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 
 from .demo_data import build_default_state
 
+from backend.db import configure_database
+
+from backend import pet_repository
 
 # Build the Flask app, register routes, and connect the UI to session data.
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "lilycare-demo-secret"
 
+    configure_database(app) #Connect to the db
+
     # Render the main dashboard with Lily's profile, vaccines, and vet links.
     @app.route("/")
     def dashboard():
         state = _load_state()
         today = date.today()
+
+        pet_profile = pet_repository.get_pet_profile()
+
+        if pet_profile is None:
+            profile = state["profile"]
+        else:
+            profile = pet_profile.to_dict()
+
+
         vaccines = [_decorate_vaccine(vaccine, today) for vaccine in state["vaccines"]]
         vaccines.sort(key=_vaccine_sort_key)
 
@@ -32,7 +46,7 @@ def create_app() -> Flask:
 
         return render_template(
             "dashboard.html",
-            profile=_decorate_profile(state["profile"], today),
+            profile=_decorate_profile(profile, today),
             vaccines=vaccines,
             vets=state["vets"],
             total_vaccines=len(vaccines),
