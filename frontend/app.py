@@ -11,11 +11,12 @@ from .demo_data import build_default_state
 from backend.db import configure_database
 
 from backend import pet_repository
+import os
 
 # Build the Flask app, register routes, and connect the UI to session data.
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "lilycare-demo-secret"
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fallback-secret")
 
     configure_database(app) #Connect to the db
 

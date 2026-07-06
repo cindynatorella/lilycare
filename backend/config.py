@@ -3,6 +3,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 @dataclass(slots=True)
 class DatabaseConfig:
@@ -12,7 +16,7 @@ class DatabaseConfig:
     port: int = 5432
     database: str = "lilycare_db"
     user: str = "lilycare_user"
-    password: str = "lilycare"
+    password: str = "lilycareOff"
     sslmode: str = "prefer"
 
 
