@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="intro-panel" id="home">
+    <div class="hero-photo-wrap">
+      <img
+        class="hero-photo"
+        src="{{ url_for('static', filename='lily-smile.jpg') }}"
+        alt="Lily smiling"
+      >
+    </div>
+    <div class="intro-summary">
+      <p class="summary-name">Lily</p>
+      <p><strong>Today:</strong> {{ today_label }}</p>
+      <p>
+        <strong>Next reminder:</strong>
+        {% if next_due %}
+          {{ next_due.name }} on {{ next_due.next_due_label }}
+        {% else %}
+          Add Lily's first vaccine reminder
+        {% endif %}
+      </p>
+      <p><strong>Tracked vaccines:</strong> {{ total_vaccines }}</p>
+    </div>
+  </section>
+
+  <section class="panel profile-panel" id="profile">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Profile</p>
+        <h2>Lily</h2>
+      </div>
+      <button
+        class="button button-secondary button-small"
+        type="button"
+        data-toggle-target="profile-edit"
+        aria-expanded="false"
+      >
+        Edit profile
+      </button>
+    </div>
+
+    <div class="profile-layout">
+      <div class="profile-main">
+        <p class="profile-description">{{ profile.description }}</p>
+      </div>
+      <dl class="profile-facts">
+        <div>
+          <dt>Birth date</dt>
+          <dd>{{ profile.birth_date_label }}</dd>
+        </div>
+        <div>
+          <dt>Age</dt>
+          <dd>{{ profile.age_label }}</dd>
+        </div>
+        <div>
+          <dt>Vaccine status</dt>
+          <dd>{{ counts.current }} current, {{ counts.due_soon }} due soon, {{ counts.overdue }} overdue</dd>
+        </div>
+      </dl>
+    </div>
+
+    <form class="stacked-form toggle-panel" id="profile-edit" action="{{ url_for('update_profile') }}" method="post" hidden>
+      <label for="birth_date">Birth date</label>
+      <input id="birth_date" name="birth_date" type="date" value="{{ profile.birth_date }}">
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="5">{{ profile.description }}</textarea>
+
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Save changes</button>
+        <button class="button button-ghost" type="button" data-toggle-target="profile-edit">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" id="vaccines">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Vaccines</p>
+        <h2>Reminders</h2>
+      </div>
+      <button
+        class="button button-primary button-small"
+        type="button"
+        data-toggle-target="vaccine-add"
+        aria-expanded="false"
+      >
+        Add vaccine
+      </button>
+    </div>
+
+    <form class="stacked-form toggle-panel" id="vaccine-add" action="{{ url_for('add_vaccine') }}" method="post" hidden>
+      <label for="name">Vaccine name</label>
+      <input id="name" name="name" type="text" placeholder="Leptospirosis">
+
+      <label for="vaccine-description">Description</label>
+      <textarea id="vaccine-description" name="description" rows="4" placeholder="Why this reminder matters for Lily"></textarea>
+
+      <label for="vaccine-note">Personal note</label>
+      <textarea id="vaccine-note" name="note" rows="3" placeholder="Anything you want to remember for this vaccine"></textarea>
+
+      <label for="recurrence_months">Recurring every</label>
+      <div class="inline-field">
+        <input id="recurrence_months" name="recurrence_months" type="number" min="1" placeholder="12">
+          <span>months</span>
+      </div>
+
+      <label for="next_due">Next due date</label>
+      <input id="next_due" name="next_due" type="date">
+
+      <label for="vaccine-history">Past vaccination dates</label>
+      <textarea id="vaccine-history" name="history" rows="4" placeholder="One YYYY-MM-DD date per line"></textarea>
+
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Save vaccine</button>
+        <button class="button button-ghost" type="button" data-toggle-target="vaccine-add">Cancel</button>
+      </div>
+    </form>
+
+    <div class="simple-list">
+      {% for vaccine in vaccines %}
+        <article class="item-card">
+          <div class="item-header">
+            <div>
+              <h3>{{ vaccine.name }}</h3>
+              <p class="item-copy">{{ vaccine.description }}</p>
+            </div>
+            <span class="status-pill status-{{ vaccine.status_key }}">{{ vaccine.status_label }}</span>
+          </div>
+
+          {% if vaccine.note %}
+            <div class="note-block">
+              <span class="note-label">Your note</span>
+              <p class="note-copy">{{ vaccine.note }}</p>
+            </div>
+          {% endif %}
+
+          <dl class="item-facts">
+            <div class="item-fact-due">
+              <dt>Next due</dt>
+              <dd>{{ vaccine.next_due_label }}</dd>
+            </div>
+            <div>
+              <dt>Repeats</dt>
+              <dd>{{ vaccine.recurrence_label }}</dd>
+            </div>
+            <div>
+              <dt>Last recorded</dt>
+              <dd>{{ vaccine.last_given_label }}</dd>
+            </div>
+          </dl>
+
+          <p class="status-hint">{{ vaccine.status_hint }}</p>
+
+          <button
+            class="button button-ghost button-small"
+            type="button"
+            data-toggle-target="history-{{ vaccine.id }}"
+            data-open-label="Hide past dates"
+            data-closed-label="Show past dates"
+            aria-expanded="false"
+          >
+            Show past dates
+          </button>
+
+          <div class="history-block" id="history-{{ vaccine.id }}" hidden>
+            <h4>Past vaccination dates</h4>
+            {% if vaccine.history_labels %}
+              <ul class="history-list">
+                {% for history_label in vaccine.history_labels %}
+                  <li>{{ history_label }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="history-empty">No past dates recorded yet.</p>
+            {% endif %}
+          </div>
+
+          <div class="item-actions">
+            <form action="{{ url_for('complete_vaccine', vaccine_id=vaccine.id) }}" method="post">
+              <button class="button button-secondary button-small" type="submit">Mark complete</button>
+            </form>
+            <button
+              class="button button-ghost button-small"
+              type="button"
+              data-toggle-target="vaccine-edit-{{ vaccine.id }}"
+              aria-expanded="false"
+            >
+              Edit
+            </button>
+          </div>
+
+          <form
+            class="stacked-form toggle-panel inline-editor"
+            id="vaccine-edit-{{ vaccine.id }}"
+            action="{{ url_for('update_vaccine', vaccine_id=vaccine.id) }}"
+            method="post"
+            hidden
+          >
+            <label for="vaccine-name-{{ vaccine.id }}">Vaccine name</label>
+            <input id="vaccine-name-{{ vaccine.id }}" name="name" type="text" value="{{ vaccine.name }}">
+
+            <label for="vaccine-description-{{ vaccine.id }}">Description</label>
+            <textarea id="vaccine-description-{{ vaccine.id }}" name="description" rows="3">{{ vaccine.description }}</textarea>
+
+            <label for="vaccine-note-{{ vaccine.id }}">Personal note</label>
+            <textarea id="vaccine-note-{{ vaccine.id }}" name="note" rows="3">{{ vaccine.note }}</textarea>
+
+            <label for="vaccine-recurrence-{{ vaccine.id }}">Recurring every</label>
+            <div class="inline-field">
+              <input id="vaccine-recurrence-{{ vaccine.id }}" name="recurrence_months" type="number" min="1" value="{{ vaccine.recurrence_months }}">
+              <span>months</span>
+            </div>
+
+            <label for="vaccine-due-{{ vaccine.id }}">Next due date</label>
+            <input id="vaccine-due-{{ vaccine.id }}" name="next_due" type="date" value="{{ vaccine.next_due_value }}">
+
+            <label for="vaccine-history-{{ vaccine.id }}">Past vaccination dates</label>
+            <textarea
+              id="vaccine-history-{{ vaccine.id }}"
+              name="history"
+              rows="5"
+              placeholder="One YYYY-MM-DD date per line"
+            >{{ vaccine.history_text }}</textarea>
+
+            <div class="form-actions">
+              <button class="button button-primary" type="submit">Save changes</button>
+              <button class="button button-ghost" type="button" data-toggle-target="vaccine-edit-{{ vaccine.id }}">Cancel</button>
+              <button
+                class="button button-danger"
+                type="submit"
+                formaction="{{ url_for('delete_vaccine', vaccine_id=vaccine.id) }}"
+                formnovalidate
+              >
+                Delete vaccine
+              </button>
+            </div>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel" id="vets">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Vet Links</p>
+        <h2>Scheduling</h2>
+      </div>
+      <button
+        class="button button-primary button-small"
+        type="button"
+        data-toggle-target="vet-add"
+        aria-expanded="false"
+      >
+        Add vet
+      </button>
+    </div>
+
+    <form class="stacked-form toggle-panel" id="vet-add" action="{{ url_for('add_vet') }}" method="post" hidden>
+      <label for="vet-name">Clinic name</label>
+      <input id="vet-name" name="name" type="text" placeholder="Downtown Veterinary Center">
+
+      <label for="vet-url">Booking URL</label>
+      <input id="vet-url" name="url" type="url" placeholder="example.com/schedule">
+
+      <label for="vet-notes">Notes</label>
+      <textarea id="vet-notes" name="notes" rows="3" placeholder="Annual wellness exams or vaccine walk-ins"></textarea>
+
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Save vet</button>
+        <button class="button button-ghost" type="button" data-toggle-target="vet-add">Cancel</button>
+      </div>
+    </form>
+
+    <div class="simple-list">
+      {% for vet in vets %}
+        <article class="item-card">
+          <div class="item-header">
+            <div>
+              <h3>{{ vet.name }}</h3>
+              <p class="item-copy">{{ vet.notes }}</p>
+            </div>
+          </div>
+
+          <p class="item-link">
+            <a href="{{ vet.url }}" target="_blank" rel="noreferrer">{{ vet.url }}</a>
+          </p>
+
+          <div class="item-actions">
+            <a class="button button-secondary button-small" href="{{ vet.url }}" target="_blank" rel="noreferrer">Schedule</a>
+            <button
+              class="button button-ghost button-small"
+              type="button"
+              data-toggle-target="vet-edit-{{ vet.id }}"
+              aria-expanded="false"
+            >
+              Edit
+            </button>
+          </div>
+
+          <form
+            class="stacked-form toggle-panel inline-editor"
+            id="vet-edit-{{ vet.id }}"
+            action="{{ url_for('update_vet', vet_id=vet.id) }}"
+            method="post"
+            hidden
+          >
+            <label for="vet-name-{{ vet.id }}">Clinic name</label>
+            <input id="vet-name-{{ vet.id }}" name="name" type="text" value="{{ vet.name }}">
+
+            <label for="vet-url-{{ vet.id }}">Booking URL</label>
+            <input id="vet-url-{{ vet.id }}" name="url" type="url" value="{{ vet.url }}">
+
+            <label for="vet-notes-{{ vet.id }}">Notes</label>
+            <textarea id="vet-notes-{{ vet.id }}" name="notes" rows="3">{{ vet.notes }}</textarea>
+
+            <div class="form-actions">
+              <button class="button button-primary" type="submit">Save changes</button>
+              <button class="button button-ghost" type="button" data-toggle-target="vet-edit-{{ vet.id }}">Cancel</button>
+              <button
+                class="button button-danger"
+                type="submit"
+                formaction="{{ url_for('delete_vet', vet_id=vet.id) }}"
+                formnovalidate
+              >
+                Delete vet
+              </button>
+            </div>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+
+    <form action="{{ url_for('reset_demo') }}" method="post" class="footer-reset">
+      <button class="text-button text-button-dark" type="submit">Reset demo data</button>
+    </form>
+  </section>
+{% endblock %}
