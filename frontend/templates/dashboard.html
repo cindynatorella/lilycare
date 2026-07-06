@@ -25,25 +25,20 @@
   </section>
 
   <section class="panel profile-panel" id="profile">
-    <div class="section-heading">
-      <div>
+    <div class="profile-layout">
+      <div class="profile-main">
         <p class="eyebrow">Profile</p>
         <h2>Lily</h2>
+        <p class="profile-description">{{ profile.description }}</p>
       </div>
       <button
-        class="button button-secondary button-small"
+        class="button button-secondary button-small profile-edit-button"
         type="button"
         data-toggle-target="profile-edit"
         aria-expanded="false"
       >
         Edit profile
       </button>
-    </div>
-
-    <div class="profile-layout">
-      <div class="profile-main">
-        <p class="profile-description">{{ profile.description }}</p>
-      </div>
       <dl class="profile-facts">
         <div>
           <dt>Birth date</dt>
