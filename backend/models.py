@@ -49,11 +49,20 @@ class Vaccine:
 	history: list[VaccineHistoryEntry] = field(default_factory=list)
 
 
-@dataclass(slots=True)
-class VetLink:
+class VetLink(db.Model):
 	"""Represent one vet link LilyCare can show on the dashboard."""
 
-	id: int | None
-	name: str
-	url: str
-	notes: str
+	__tablename__ = "vet_links"
+
+	id: Mapped[int] = mapped_column(Integer, primary_key=True)
+	name: Mapped[str] = mapped_column(Text, nullable=False, default="")
+	url: Mapped[str] = mapped_column(Text, nullable=False, default="")
+	notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+	def to_dict(self) -> dict:
+		return {
+			"id": self.id,
+			"name": self.name,
+			"url": self.url,
+			"notes": self.notes,
+		}

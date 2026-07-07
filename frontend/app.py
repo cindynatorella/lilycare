@@ -8,10 +8,14 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 
 from .demo_data import build_default_state
 
-from backend.db import configure_database
+from backend.db import configure_database, db
 
 from backend import pet_repository
+from backend import vet_repository
+
 from backend.models import PetProfile
+from backend.models import VetLink
+
 import os
 
 # Build the Flask app, register routes, and connect the UI to session data.
@@ -46,11 +50,23 @@ def create_app() -> Flask:
 
 		next_due = next((vaccine for vaccine in vaccines if vaccine["next_due_date"]), None)
 
+		# Vet links
+		try:
+			vet_links = vet_repository.list_vet_links()
+
+			if vet_links:
+				vets = [vet_link.to_dict() for vet_link in vet_links]
+			else:
+				vets = []
+		except Exception:
+			vets = []
+
+		#rendering
 		return render_template(
 			"dashboard.html",
 			profile=_decorate_profile(profile, today),
 			vaccines=vaccines,
-			vets=state["vets"],
+			vets=vets,
 			total_vaccines=len(vaccines),
 			today_label=_format_date(today),
 			next_due=next_due,
@@ -217,7 +233,6 @@ def create_app() -> Flask:
 	# Add a new vet link that Lily's dashboard can open quickly.
 	@app.post("/vets")
 	def add_vet():
-		state = _load_state()
 		name = request.form.get("name", "").strip()
 		url = request.form.get("url", "").strip()
 		notes = request.form.get("notes", "").strip()
@@ -229,61 +244,76 @@ def create_app() -> Flask:
 		if not url.startswith(("http://", "https://")):
 			url = f"https://{url}"
 
-		state["vets"].append(
-			{
-				"id": uuid4().hex[:8],
-				"name": name,
-				"url": url,
-				"notes": notes or "Booking link saved for future appointments.",
-			}
+		vet_link = VetLink(
+			name=name,
+			url=url,
+			notes=notes or "Booking link saved for future appointments.",
 		)
-		_save_state(state)
-		flash(f"{name} was added to Lily's vet links.", "success")
+
+		try:
+			vet_repository.create_vet_link(vet_link)
+			flash(f"{name} was added to Lily's vet links.", "success")
+
+		except Exception as error:
+			print("Could not save vet link to database:", error)
+			db.session.rollback()
+			flash("The vet link could not be saved because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vets"))
 
 	# Save edits to an existing vet link card.
-	@app.post("/vets/<vet_id>/update")
-	def update_vet(vet_id: str):
-		state = _load_state()
+	@app.post("/vets/<int:vet_id>/update")
+	def update_vet(vet_id: int):
+		name = request.form.get("name", "").strip()
+		url = request.form.get("url", "").strip()
+		notes = request.form.get("notes", "").strip()
 
-		for vet in state["vets"]:
-			if vet["id"] != vet_id:
-				continue
-
-			name = request.form.get("name", "").strip()
-			url = request.form.get("url", "").strip()
-			notes = request.form.get("notes", "").strip()
-
-			if not name or not url:
-				flash("Vet name and booking URL are required.", "error")
-				return redirect(url_for("dashboard", _anchor="vets"))
-
-			if not url.startswith(("http://", "https://")):
-				url = f"https://{url}"
-
-			vet["name"] = name
-			vet["url"] = url
-			vet["notes"] = notes or "Booking link saved for future appointments."
-			_save_state(state)
-			flash(f"{name} was updated.", "success")
+		if not name or not url:
+			flash("Vet name and booking URL are required.", "error")
 			return redirect(url_for("dashboard", _anchor="vets"))
 
-		flash("That vet link could not be found in the current session.", "error")
+		if not url.startswith(("http://", "https://")):
+			url = f"https://{url}"
+
+		updated_vet = VetLink(
+			id=vet_id,
+			name=name,
+			url=url,
+			notes=notes or "Booking link saved for future appointments.",
+		)
+
+		try:
+			saved_vet = vet_repository.update_vet_link(updated_vet)
+
+			if saved_vet is None:
+				flash("That vet link could not be found.", "error")
+			else:
+				flash(f"{name} was updated.", "success")
+
+		except Exception as error:
+			print("Could not update vet link in database:", error)
+			db.session.rollback()
+			flash("The vet link could not be updated because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vets"))
 
-	# Remove a vet link card from the current session.
-	@app.post("/vets/<vet_id>/delete")
-	def delete_vet(vet_id: str):
-		state = _load_state()
-		original_count = len(state["vets"])
-		state["vets"] = [vet for vet in state["vets"] if vet["id"] != vet_id]
 
-		if len(state["vets"]) == original_count:
-			flash("That vet link could not be found in the current session.", "error")
-			return redirect(url_for("dashboard", _anchor="vets"))
+	# Remove a vet link card from PostgreSQL.
+	@app.post("/vets/<int:vet_id>/delete")
+	def delete_vet(vet_id: int):
+		try:
+			deleted = vet_repository.delete_vet_link(vet_id)
 
-		_save_state(state)
-		flash("The vet link was deleted.", "success")
+			if deleted:
+				flash("The vet link was deleted.", "success")
+			else:
+				flash("That vet link could not be found.", "error")
+
+		except Exception as error:
+			print("Could not delete vet link from database:", error)
+			db.session.rollback()
+			flash("The vet link could not be deleted because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vets"))
 
 	# Reset the session back to the original demo data.
