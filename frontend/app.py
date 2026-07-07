@@ -12,9 +12,12 @@ from backend.db import configure_database, db
 
 from backend import pet_repository
 from backend import vet_repository
+from backend import vaccine_repository
 
 from backend.models import PetProfile
 from backend.models import VetLink
+
+from backend.models import Vaccine,VaccineHistoryEntry
 
 import os
 
@@ -38,8 +41,11 @@ def create_app() -> Flask:
 		else:
 			profile = pet_profile.to_dict()
 
+		vaccines = [
+			_decorate_vaccine(vaccine.to_dict(), today)
+			for vaccine in vaccine_repository.list_vaccines()
+		]
 
-		vaccines = [_decorate_vaccine(vaccine, today) for vaccine in state["vaccines"]]
 		vaccines.sort(key=_vaccine_sort_key)
 
 		counts = {
@@ -102,7 +108,6 @@ def create_app() -> Flask:
 	# Create a new vaccine reminder card from the add form.
 	@app.post("/vaccines")
 	def add_vaccine():
-		state = _load_state()
 		name = request.form.get("name", "").strip()
 		description = request.form.get("description", "").strip()
 		note = request.form.get("note", "").strip()
@@ -116,118 +121,156 @@ def create_app() -> Flask:
 
 		try:
 			recurrence_value = int(recurrence_months)
+
 			if recurrence_value <= 0:
 				raise ValueError
-			_parse_date(next_due)
-			history = _parse_history(history_text)
+
+			next_due_date = _parse_date(next_due)
+
+			history_values = _parse_history(history_text)
+			history_dates = [
+				_parse_date(value)
+				for value in history_values
+			]
+
 		except ValueError:
 			flash("Use a positive month interval and valid vaccine dates.", "error")
 			return redirect(url_for("dashboard", _anchor="vaccines"))
 
-		state["vaccines"].append(
-			{
-				"id": uuid4().hex[:8],
-				"name": name,
-				"description": description or "Custom vaccine reminder.",
-				"note": note,
-				"recurrence_months": recurrence_value,
-				"next_due": next_due,
-				"last_given": history[0] if history else "",
-				"history": history,
-			}
+		vaccine = Vaccine(
+			name=name,
+			description=description or "Custom vaccine reminder.",
+			note=note,
+			recurrence_months=recurrence_value,
+			next_due=next_due_date,
 		)
-		_save_state(state)
-		flash(f"{name} was added to Lily's vaccine tracker.", "success")
+
+		try:
+			saved_vaccine = vaccine_repository.create_vaccine(vaccine)
+
+			if saved_vaccine.id is not None:
+				vaccine_repository.replace_vaccine_history(saved_vaccine.id, history_dates)
+
+			flash(f"{name} was added to Lily's vaccine tracker.", "success")
+
+		except Exception as error:
+			print("Could not save vaccine to database:", error)
+			db.session.rollback()
+			flash("The vaccine could not be saved because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vaccines"))
 
 	# Mark a vaccine as completed today and roll the due date forward.
-	@app.post("/vaccines/<vaccine_id>/complete")
-	def complete_vaccine(vaccine_id: str):
-		state = _load_state()
+	@app.post("/vaccines/<int:vaccine_id>/complete")
+	def complete_vaccine(vaccine_id: int):
+		try:
+			vaccine = vaccine_repository.get_vaccine(vaccine_id)
 
-		for vaccine in state["vaccines"]:
-			if vaccine["id"] != vaccine_id:
-				continue
+			if vaccine is None:
+				flash("That vaccine card could not be found.", "error")
+				return redirect(url_for("dashboard", _anchor="vaccines"))
 
-			recurrence_months = int(vaccine.get("recurrence_months", 0) or 0)
-			if recurrence_months <= 0:
+			if vaccine.recurrence_months <= 0:
 				flash("That vaccine needs a recurrence interval before it can roll forward.", "error")
 				return redirect(url_for("dashboard", _anchor="vaccines"))
 
 			today = date.today()
-			vaccine["last_given"] = today.isoformat()
-			vaccine["next_due"] = _add_months(today, recurrence_months).isoformat()
-			history = _normalize_history(vaccine.get("history", []))
-			today_value = today.isoformat()
-			if today_value not in history:
-				history.insert(0, today_value)
-			vaccine["history"] = history
-			_save_state(state)
-			flash(f"{vaccine['name']} was marked complete and rolled to the next due date.", "success")
-			return redirect(url_for("dashboard", _anchor="vaccines"))
 
-		flash("That vaccine card could not be found in the current session.", "error")
+			vaccine_repository.add_vaccine_history_entry(vaccine_id, today)
+
+			vaccine.next_due = _add_months(today, vaccine.recurrence_months)
+			vaccine_repository.update_vaccine(vaccine)
+
+			flash(f"{vaccine.name} was marked complete and rolled to the next due date.", "success")
+
+		except Exception as error:
+			print("Could not mark vaccine complete:", error)
+			db.session.rollback()
+			flash("The vaccine could not be marked complete because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vaccines"))
 
 	# Save changes to an existing vaccine, including notes and history.
-	@app.post("/vaccines/<vaccine_id>/update")
-	def update_vaccine(vaccine_id: str):
-		state = _load_state()
+	@app.post("/vaccines/<int:vaccine_id>/update")
+	def update_vaccine(vaccine_id: int):
+		name = request.form.get("name", "").strip()
+		description = request.form.get("description", "").strip()
+		note = request.form.get("note", "").strip()
+		recurrence_months = request.form.get("recurrence_months", "").strip()
+		next_due = request.form.get("next_due", "").strip()
+		history_text = request.form.get("history", "").strip()
 
-		for vaccine in state["vaccines"]:
-			if vaccine["id"] != vaccine_id:
-				continue
-
-			name = request.form.get("name", "").strip()
-			description = request.form.get("description", "").strip()
-			note = request.form.get("note", "").strip()
-			recurrence_months = request.form.get("recurrence_months", "").strip()
-			next_due = request.form.get("next_due", "").strip()
-			history_text = request.form.get("history", "").strip()
-
-			if not name or not recurrence_months or not next_due:
-				flash("Vaccine name, recurrence, and due date are required.", "error")
-				return redirect(url_for("dashboard", _anchor="vaccines"))
-
-			try:
-				recurrence_value = int(recurrence_months)
-				if recurrence_value <= 0:
-					raise ValueError
-				_parse_date(next_due)
-				history = _parse_history(history_text)
-			except ValueError:
-				flash("Use valid dates and a positive recurrence interval.", "error")
-				return redirect(url_for("dashboard", _anchor="vaccines"))
-
-			vaccine["name"] = name
-			vaccine["description"] = description or "Custom vaccine reminder."
-			vaccine["note"] = note
-			vaccine["recurrence_months"] = recurrence_value
-			vaccine["next_due"] = next_due
-			vaccine["history"] = history
-			vaccine["last_given"] = history[0] if history else ""
-			_save_state(state)
-			flash(f"{name} was updated.", "success")
+		if not name or not recurrence_months or not next_due:
+			flash("Vaccine name, recurrence, and due date are required.", "error")
 			return redirect(url_for("dashboard", _anchor="vaccines"))
 
-		flash("That vaccine card could not be found in the current session.", "error")
+		try:
+			recurrence_value = int(recurrence_months)
+
+			if recurrence_value <= 0:
+				raise ValueError
+
+			manual_next_due_date = _parse_date(next_due)
+
+			history_values = _parse_history(history_text)
+			history_dates = [
+				_parse_date(value)
+				for value in history_values
+			]
+
+			if history_dates:
+				last_administered_date = max(history_dates)
+				next_due_date = _add_months(last_administered_date, recurrence_value)
+			else:
+				next_due_date = manual_next_due_date
+
+		except ValueError:
+			flash("Use valid dates and a positive recurrence interval.", "error")
+			return redirect(url_for("dashboard", _anchor="vaccines"))
+
+		updated_vaccine = Vaccine(
+			id=vaccine_id,
+			name=name,
+			description=description or "Custom vaccine reminder.",
+			note=note,
+			recurrence_months=recurrence_value,
+			next_due=next_due_date,
+		)
+
+		try:
+			saved_vaccine = vaccine_repository.update_vaccine(updated_vaccine)
+
+			if saved_vaccine is None:
+				flash("That vaccine card could not be found.", "error")
+				return redirect(url_for("dashboard", _anchor="vaccines"))
+
+			vaccine_repository.replace_vaccine_history(vaccine_id, history_dates)
+
+			flash(f"{name} was updated. The next due date was recalculated from the latest administered date.", "success")
+
+		except Exception as error:
+			print("Could not update vaccine in database:", error)
+			db.session.rollback()
+			flash("The vaccine could not be updated because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vaccines"))
 
-	# Remove a vaccine card from the current session.
-	@app.post("/vaccines/<vaccine_id>/delete")
-	def delete_vaccine(vaccine_id: str):
-		state = _load_state()
-		original_count = len(state["vaccines"])
-		state["vaccines"] = [
-			vaccine for vaccine in state["vaccines"] if vaccine["id"] != vaccine_id
-		]
+	# Remove a vaccine card from PostgreSQL.
+	@app.post("/vaccines/<int:vaccine_id>/delete")
+	def delete_vaccine(vaccine_id: int):
+		try:
+			deleted = vaccine_repository.delete_vaccine(vaccine_id)
 
-		if len(state["vaccines"]) == original_count:
-			flash("That vaccine card could not be found in the current session.", "error")
-			return redirect(url_for("dashboard", _anchor="vaccines"))
+			if deleted:
+				flash("The vaccine card was deleted.", "success")
+			else:
+				flash("That vaccine card could not be found.", "error")
 
-		_save_state(state)
-		flash("The vaccine card was deleted.", "success")
+		except Exception as error:
+			print("Could not delete vaccine from database:", error)
+			db.session.rollback()
+			flash("The vaccine could not be deleted because the database had an error.", "error")
+
 		return redirect(url_for("dashboard", _anchor="vaccines"))
 
 	# Add a new vet link that Lily's dashboard can open quickly.

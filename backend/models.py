@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-from sqlalchemy import Date, Integer, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, Integer, Text, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import db
 
@@ -27,26 +27,63 @@ class PetProfile(db.Model):
 		}
 
 
-@dataclass(slots=True)
-class VaccineHistoryEntry:
+class VaccineHistoryEntry(db.Model):
 	"""Represent one past administration date for a vaccine."""
 
-	id: int | None
-	vaccine_id: int
-	administered_on: date
+	__tablename__ = "vaccine_history_entries"
+
+	id: Mapped[int] = mapped_column(Integer, primary_key=True)
+	vaccine_id: Mapped[int] = mapped_column(
+		ForeignKey("vaccines.id", ondelete="CASCADE"),
+		nullable=False,
+		index=True,
+	)
+	administered_on: Mapped[date] = mapped_column(Date, nullable=False)
+
+	vaccine: Mapped["Vaccine"] = relationship(back_populates="history")
+
+	def to_dict(self) -> dict:
+		return {
+			"id": self.id,
+			"vaccine_id": self.vaccine_id,
+			"administered_on": self.administered_on.isoformat(),
+		}
 
 
-@dataclass(slots=True)
-class Vaccine:
+class Vaccine(db.Model):
 	"""Represent one vaccine reminder and its related history."""
 
-	id: int | None
-	name: str
-	description: str
-	note: str
-	recurrence_months: int
-	next_due: date | None
-	history: list[VaccineHistoryEntry] = field(default_factory=list)
+	__tablename__ = "vaccines"
+
+	id: Mapped[int] = mapped_column(Integer, primary_key=True)
+	name: Mapped[str] = mapped_column(Text, nullable=False)
+	description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+	note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+	recurrence_months: Mapped[int] = mapped_column(Integer, nullable=False)
+	next_due: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+	history: Mapped[list[VaccineHistoryEntry]] = relationship(
+		back_populates="vaccine",
+		cascade="all, delete-orphan",
+		order_by=lambda: VaccineHistoryEntry.administered_on.desc(),
+	)
+
+	def to_dict(self) -> dict:
+		history_values = [
+			entry.administered_on.isoformat()
+			for entry in self.history
+		]
+
+		return {
+			"id": self.id,
+			"name": self.name,
+			"description": self.description,
+			"note": self.note,
+			"recurrence_months": self.recurrence_months,
+			"next_due": self.next_due.isoformat() if self.next_due else "",
+			"last_given": history_values[0] if history_values else "",
+			"history": history_values,
+		}
 
 
 class VetLink(db.Model):
