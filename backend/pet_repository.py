@@ -24,4 +24,20 @@ def create_pet_profile(profile: PetProfile) -> PetProfile:
 
 # Update Lily's profile fields after an edit in the Flask UI.
 def update_pet_profile(profile: PetProfile) -> PetProfile:
-    raise NotImplementedError("TODO: Update Lily's profile row and return the saved PetProfile.")
+	saved_profile = get_pet_profile()
+
+	if saved_profile is None:
+		saved_profile = PetProfile(
+			name=profile.name,
+			birth_date=profile.birth_date,
+			description=profile.description,
+		)
+
+		db.session.add(saved_profile) # Adds if it does not exist.
+	else:
+		saved_profile.birth_date = profile.birth_date
+		saved_profile.description = profile.description
+
+	db.session.commit() # Alchemy creates the update or add for me 
+
+	return saved_profile
