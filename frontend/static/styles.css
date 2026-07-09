@@ -1,20 +1,28 @@
 :root {
-  --page: #fff4df;
-  --panel: #10212c;
-  --panel-strong: #162d3b;
-  --paper: #fff9ef;
-  --line: rgba(255, 193, 108, 0.22);
-  --text: #f8eed8;
-  --text-dark: #1c2530;
-  --muted: #d8c6ac;
-  --muted-dark: #635846;
-  --accent: #ff7a59;
-  --accent-deep: #e44f2d;
-  --accent-soft: #ffd6c8;
-  --gold: #ffcf66;
-  --mint: #7ae7c7;
-  --danger: #ff9a78;
-  --shadow: 0 20px 45px rgba(16, 33, 44, 0.18);
+  --page: #f8f2fb;
+  --panel: #fbf7fd;
+  --panel-strong: #f3ebfb;
+  --paper: #ffffff;
+  --line: rgba(188, 165, 212, 0.34);
+  --text: #433653;
+  --text-dark: #433653;
+  --muted: #7f6d95;
+  --muted-dark: #6f6381;
+  --lavender: #c4add8;
+  --lavender-soft: #efe5f7;
+  --blush: #efbad3;
+  --blush-soft: #fbe3ee;
+  --rose: #f19bbf;
+  --rose-soft: #ffd9e8;
+  --powder: #94bce7;
+  --powder-soft: #deefff;
+  --accent: #f19bbf;
+  --accent-deep: #dea2ce;
+  --accent-soft: #f7d5e8;
+  --gold: #f0b5d1;
+  --mint: #94bce7;
+  --danger: #df8fb2;
+  --shadow: 0 22px 48px rgba(112, 91, 140, 0.14);
 }
 
 * {
@@ -30,9 +38,9 @@ body {
   font-family: "Gill Sans", "Trebuchet MS", "Segoe UI", sans-serif;
   color: var(--text-dark);
   background:
-    radial-gradient(circle at top left, rgba(255, 122, 89, 0.34), transparent 24%),
-    radial-gradient(circle at top right, rgba(122, 231, 199, 0.28), transparent 20%),
-    linear-gradient(180deg, #fff4df 0%, #ffe5c0 100%);
+    radial-gradient(circle at top left, rgba(241, 155, 191, 0.34), transparent 24%),
+    radial-gradient(circle at top right, rgba(148, 188, 231, 0.34), transparent 24%),
+    linear-gradient(180deg, #faf4fd 0%, #edf5ff 100%);
 }
 
 a {
@@ -108,11 +116,12 @@ a {
 .site-nav a {
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(255, 249, 239, 0.86);
-  border: 1px solid rgba(28, 37, 48, 0.1);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(188, 165, 212, 0.34);
   text-decoration: none;
   font-weight: 700;
   text-align: center;
+  box-shadow: 0 10px 22px rgba(112, 91, 140, 0.08);
 }
 
 .flash-stack {
@@ -124,16 +133,16 @@ a {
 .flash {
   padding: 13px 15px;
   border-radius: 18px;
-  border: 1px solid rgba(28, 37, 48, 0.08);
-  box-shadow: 0 10px 26px rgba(28, 37, 48, 0.08);
+  border: 1px solid rgba(188, 165, 212, 0.2);
+  box-shadow: 0 10px 26px rgba(112, 91, 140, 0.08);
 }
 
 .flash-success {
-  background: #fff9ef;
+  background: #f7f0fc;
 }
 
 .flash-error {
-  background: #ffe0d6;
+  background: #ffe6ef;
 }
 
 .intro-panel,
@@ -171,13 +180,14 @@ a {
   padding: 24px;
   margin-bottom: 18px;
   background:
-    linear-gradient(135deg, rgba(16, 33, 44, 0.96), rgba(28, 58, 74, 0.96));
+    linear-gradient(135deg, rgba(230, 217, 244, 0.98), rgba(222, 239, 255, 0.98));
   color: var(--text);
+  border: 1px solid rgba(148, 188, 231, 0.38);
 }
 
 .eyebrow {
   margin: 0 0 10px;
-  color: var(--gold);
+  color: #9f7cae;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.76rem;
@@ -203,8 +213,8 @@ a {
   align-self: center;
   border-radius: 24px;
   overflow: hidden;
-  background: rgba(255, 249, 239, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(255, 249, 239, 0.12);
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(188, 165, 212, 0.18);
 }
 
 .hero-photo {
@@ -221,7 +231,8 @@ a {
   align-content: center;
   padding: 20px;
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 122, 89, 0.22), rgba(255, 207, 102, 0.18));
+  background: linear-gradient(180deg, rgba(255, 232, 242, 0.92), rgba(225, 241, 255, 0.88));
+  box-shadow: inset 0 0 0 1px rgba(148, 188, 231, 0.18);
 }
 
 .intro-summary p {
@@ -240,6 +251,21 @@ a {
   background: linear-gradient(180deg, var(--panel) 0%, var(--panel-strong) 100%);
   border: 1px solid var(--line);
   color: var(--text);
+}
+
+.profile-panel {
+  background: linear-gradient(180deg, #faf5fd 0%, #f0e7fa 100%);
+  border-color: rgba(196, 173, 216, 0.5);
+}
+
+#vaccines.panel {
+  background: linear-gradient(180deg, #fff8fb 0%, #fde8f2 100%);
+  border-color: rgba(241, 155, 191, 0.42);
+}
+
+#vets.panel {
+  background: linear-gradient(180deg, #f7fbff 0%, #e7f2ff 100%);
+  border-color: rgba(148, 188, 231, 0.48);
 }
 
 .section-heading {
@@ -298,14 +324,14 @@ a {
 }
 
 .profile-facts dt {
-  color: var(--gold);
+  color: #a47fc4;
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .item-facts dt {
-  color: #8b4a2d;
+  color: #9169aa;
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -325,9 +351,19 @@ a {
 .item-card {
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(255, 207, 102, 0.22);
-  background: linear-gradient(180deg, rgba(255, 249, 239, 0.97), rgba(255, 239, 212, 0.96));
+  border: 1px solid rgba(188, 165, 212, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 239, 252, 0.94));
   color: var(--text-dark);
+}
+
+#vaccines .item-card {
+  border-color: rgba(241, 155, 191, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 240, 247, 0.96));
+}
+
+#vets .item-card {
+  border-color: rgba(148, 188, 231, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(239, 247, 255, 0.96));
 }
 
 .item-header,
@@ -344,9 +380,31 @@ a {
   font-size: 1.35rem;
 }
 
+.vaccine-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.7rem;
+  line-height: 1.1;
+  color: #7d5aa0;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.vaccine-title::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f19bbf 0%, #94bce7 100%);
+  box-shadow: 0 0 0 6px rgba(241, 155, 191, 0.14);
+  flex: 0 0 auto;
+}
+
 .item-copy {
   margin: 10px 0 0;
   color: var(--muted-dark);
+  overflow-wrap: anywhere;
 }
 
 .note-block,
@@ -357,11 +415,23 @@ a {
 }
 
 .note-block {
-  background: rgba(28, 37, 48, 0.04);
+  background: rgba(240, 181, 209, 0.16);
 }
 
 .history-block {
-  background: rgba(18, 33, 44, 0.06);
+  background: rgba(148, 188, 231, 0.14);
+}
+
+#vaccines .note-block {
+  background: rgba(241, 155, 191, 0.18);
+}
+
+#vaccines .history-block {
+  background: rgba(255, 219, 235, 0.62);
+}
+
+#vets .item-link {
+  color: #56708f;
 }
 
 .note-label {
@@ -370,19 +440,19 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 800;
-  color: #8a7664;
+  color: #9b799e;
 }
 
 .note-copy {
   margin: 8px 0 0;
-  color: #766a59;
+  color: #736684;
   font-size: 0.95rem;
 }
 
 .history-block h4 {
   margin: 0 0 10px;
   font-size: 1.05rem;
-  color: #5a2f20;
+  color: #76598e;
 }
 
 .history-list {
@@ -401,6 +471,10 @@ a {
   color: var(--muted-dark);
 }
 
+.item-link a {
+  overflow-wrap: anywhere;
+}
+
 .item-facts {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 14px;
@@ -409,17 +483,22 @@ a {
 .item-fact-due {
   padding: 12px 14px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255, 122, 89, 0.18), rgba(255, 207, 102, 0.18));
-  box-shadow: inset 0 0 0 1px rgba(228, 79, 45, 0.12);
+  background: linear-gradient(135deg, rgba(241, 155, 191, 0.18), rgba(148, 188, 231, 0.22));
+  box-shadow: inset 0 0 0 1px rgba(188, 165, 212, 0.2);
+}
+
+#vaccines .item-fact-due {
+  background: linear-gradient(135deg, rgba(241, 155, 191, 0.22), rgba(255, 217, 232, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(241, 155, 191, 0.18);
 }
 
 .item-fact-due dt {
-  color: #7d2b19;
+  color: #935e83;
 }
 
 .item-fact-due dd {
   font-size: 1.08rem;
-  color: #4f1f13;
+  color: #5f4e72;
 }
 
 .item-actions {
@@ -432,7 +511,7 @@ a {
 .inline-editor {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 207, 102, 0.22);
+  border-top: 1px solid rgba(188, 165, 212, 0.22);
 }
 
 .stacked-form {
@@ -449,10 +528,11 @@ a {
   width: 100%;
   padding: 14px 15px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 122, 89, 0.18);
-  background: rgba(255, 249, 239, 0.95);
+  border: 1px solid rgba(188, 165, 212, 0.24);
+  background: rgba(255, 255, 255, 0.92);
   color: var(--text-dark);
   font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .stacked-form textarea {
@@ -467,7 +547,7 @@ a {
 }
 
 .inline-field span {
-  color: var(--muted);
+  color: var(--muted-dark);
   font-weight: 700;
 }
 
@@ -497,25 +577,35 @@ a {
 
 .button-primary {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
-  color: #fff8f0;
-  box-shadow: 0 12px 24px rgba(228, 79, 45, 0.24);
+  color: #fffaff;
+  box-shadow: 0 14px 24px rgba(191, 130, 167, 0.26);
 }
 
 .button-secondary {
-  background: linear-gradient(135deg, var(--mint) 0%, #4ec5a2 100%);
-  color: #11323a;
+  background: linear-gradient(135deg, var(--mint) 0%, #b6d3f1 100%);
+  color: #36506c;
+}
+
+#vaccines .button-primary {
+  background: linear-gradient(135deg, #f19bbf 0%, #de8fb5 100%);
+}
+
+#vets .button-primary,
+#vets .button-secondary {
+  background: linear-gradient(135deg, #94bce7 0%, #b8d4f1 100%);
+  color: #35536f;
 }
 
 .button-ghost {
   background: transparent;
   color: currentColor;
-  border-color: rgba(255, 207, 102, 0.28);
+  border-color: rgba(188, 165, 212, 0.34);
 }
 
 .button-danger {
   background: transparent;
-  color: #8f2e1e;
-  border-color: rgba(228, 79, 45, 0.24);
+  color: #a4577a;
+  border-color: rgba(223, 143, 178, 0.34);
 }
 
 .button-small {
@@ -542,23 +632,23 @@ a {
 }
 
 .status-current {
-  background: rgba(122, 231, 199, 0.24);
-  color: #1b684f;
+  background: rgba(148, 188, 231, 0.28);
+  color: #456486;
 }
 
 .status-due_soon {
-  background: rgba(255, 207, 102, 0.3);
-  color: #7d5613;
+  background: rgba(240, 181, 209, 0.32);
+  color: #8f5e82;
 }
 
 .status-overdue {
-  background: rgba(255, 122, 89, 0.24);
-  color: #9c3116;
+  background: rgba(241, 155, 191, 0.28);
+  color: #9b4b74;
 }
 
 .status-unknown {
-  background: rgba(28, 37, 48, 0.1);
-  color: #535f68;
+  background: rgba(188, 165, 212, 0.2);
+  color: #6d6280;
 }
 
 .text-button {
@@ -568,7 +658,7 @@ a {
 }
 
 .text-button-dark {
-  color: var(--gold);
+  color: #9f7cae;
 }
 
 .footer-reset {
@@ -657,5 +747,80 @@ a {
   .stacked-form input,
   .stacked-form textarea {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-shell {
+    width: min(100% - 12px, 960px);
+    padding: 12px 0 24px;
+  }
+
+  .brand {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .site-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-panel,
+  .panel {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .auth-shell {
+    min-height: auto;
+  }
+
+  .auth-card h1,
+  .section-heading h2,
+  .profile-main h2 {
+    font-size: 1.65rem;
+  }
+
+  .summary-name {
+    font-size: 1.5rem;
+  }
+
+  .vaccine-title {
+    font-size: 1.4rem;
+    align-items: flex-start;
+  }
+
+  .vaccine-title::before {
+    width: 10px;
+    height: 10px;
+    box-shadow: 0 0 0 5px rgba(241, 155, 191, 0.14);
+  }
+
+  .status-pill {
+    align-self: flex-start;
+  }
+
+  .item-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-field {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .inline-field span {
+    padding-left: 2px;
+  }
+
+  .note-block,
+  .history-block {
+    padding: 12px 14px;
   }
 }
