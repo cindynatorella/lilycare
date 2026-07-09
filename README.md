@@ -27,5 +27,6 @@ python app.py
 
 4. Open `http://127.0.0.1:5000`.
 
+5. On first launch, visit the setup page and create the shared app password. After that, users will need the password plus the built-in math CAPTCHA to open the dashboard.
 
-5. Don't forget to connect the DB.
+6. Don't forget to connect the DB.

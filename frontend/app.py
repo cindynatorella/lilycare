@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import calendar
+import random
 from datetime import date, datetime
 from uuid import uuid4
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .demo_data import build_default_state
 
@@ -16,6 +18,7 @@ from backend import vaccine_repository
 
 from backend.models import PetProfile
 from backend.models import VetLink
+from backend.models import AppAccessConfig
 
 from backend.models import Vaccine,VaccineHistoryEntry
 
@@ -27,6 +30,95 @@ def create_app() -> Flask:
 	app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fallback-secret")
 
 	configure_database(app) #Connect to the db
+
+	with app.app_context():
+		db.create_all()
+
+	@app.before_request
+	def require_login():
+		if request.endpoint is None or request.endpoint == "static":
+			return None
+
+		if _get_access_config() is None:
+			if request.endpoint == "setup_access":
+				return None
+			return redirect(url_for("setup_access"))
+
+		if session.get("authenticated"):
+			if request.endpoint in {"login", "setup_access"}:
+				return redirect(url_for("dashboard"))
+			return None
+
+		if request.endpoint in {"login"}:
+			return None
+
+		return redirect(url_for("login"))
+
+	@app.route("/login", methods=["GET", "POST"])
+	def login():
+		if _get_access_config() is None:
+			return redirect(url_for("setup_access"))
+
+		if request.method == "POST":
+			password = request.form.get("password", "")
+			captcha_answer = request.form.get("captcha_answer", "").strip()
+
+			if not _verify_captcha(captcha_answer):
+				flash("The CAPTCHA answer was incorrect. Please try again.", "error")
+				return render_template("login.html", mode="login", captcha_prompt=_prepare_captcha())
+
+			access_config = _get_access_config()
+
+			if access_config is None or not check_password_hash(access_config.password_hash, password):
+				flash("The password was incorrect. Please try again.", "error")
+				return render_template("login.html", mode="login", captcha_prompt=_prepare_captcha())
+
+			session["authenticated"] = True
+			session.permanent = True
+			flash("Welcome back to LilyCare.", "success")
+			return redirect(url_for("dashboard"))
+
+		return render_template("login.html", mode="login", captcha_prompt=_prepare_captcha())
+
+	@app.route("/setup", methods=["GET", "POST"])
+	def setup_access():
+		if _get_access_config() is not None:
+			return redirect(url_for("login"))
+
+		if request.method == "POST":
+			password = request.form.get("password", "")
+			confirm_password = request.form.get("confirm_password", "")
+
+			if not password.strip():
+				flash("Add a password before saving access settings.", "error")
+				return render_template("login.html", mode="setup")
+
+			if password != confirm_password:
+				flash("The password confirmation did not match.", "error")
+				return render_template("login.html", mode="setup")
+
+			db.session.add(
+				AppAccessConfig(
+					id=1,
+					password_hash=generate_password_hash(password),
+				)
+			)
+			db.session.commit()
+
+			session["authenticated"] = True
+			session.permanent = True
+			flash("The shared password has been saved.", "success")
+			return redirect(url_for("dashboard"))
+
+		return render_template("login.html", mode="setup")
+
+	@app.post("/logout")
+	def logout():
+		session.pop("authenticated", None)
+		session.pop("captcha_prompt", None)
+		session.pop("captcha_answer", None)
+		flash("You have been signed out.", "success")
+		return redirect(url_for("login"))
 
 	# Render the main dashboard with Lily's profile, vaccines, and vet links.
 	@app.route("/")
@@ -384,6 +476,28 @@ def _load_state() -> dict:
 def _save_state(state: dict) -> None:
 	session["lilycare_state"] = state
 	session.modified = True
+
+
+def _get_access_config() -> AppAccessConfig | None:
+	return db.session.get(AppAccessConfig, 1)
+
+
+def _prepare_captcha(force_refresh: bool = False) -> str:
+	if force_refresh or "captcha_prompt" not in session or "captcha_answer" not in session:
+		left = random.randint(1, 9)
+		right = random.randint(1, 9)
+		session["captcha_prompt"] = f"What is {left} + {right}?"
+		session["captcha_answer"] = str(left + right)
+		session.modified = True
+
+	return session["captcha_prompt"]
+
+
+def _verify_captcha(answer: str) -> bool:
+	expected_answer = str(session.get("captcha_answer", "")).strip()
+	is_valid = bool(expected_answer) and answer == expected_answer
+	_prepare_captcha(force_refresh=True)
+	return is_valid
 
 
 # Convert a YYYY-MM-DD string into a Python date object.

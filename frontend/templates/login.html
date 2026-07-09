@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="auth-shell">
+    <div class="auth-card panel">
+      {% if mode == "setup" %}
+        <p class="eyebrow">First Run</p>
+        <h1>Set the shared password</h1>
+        <p class="auth-copy">
+          Create the one password this app will use before anyone can open the dashboard.
+        </p>
+
+        <form class="stacked-form" action="{{ url_for('setup_access') }}" method="post">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required>
+
+          <label for="confirm_password">Confirm password</label>
+          <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required>
+
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Save password</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="eyebrow">Protected Access</p>
+        <h1>Sign in to LilyCare</h1>
+        <p class="auth-copy">
+          Enter the shared password and answer the math question to continue.
+        </p>
+
+        <form class="stacked-form" action="{{ url_for('login') }}" method="post">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+          <label for="captcha_answer">{{ captcha_prompt }}</label>
+          <input
+            id="captcha_answer"
+            name="captcha_answer"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="Your answer"
+            required
+          >
+
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Unlock app</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

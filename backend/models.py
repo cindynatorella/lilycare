@@ -103,3 +103,12 @@ class VetLink(db.Model):
 			"url": self.url,
 			"notes": self.notes,
 		}
+
+
+class AppAccessConfig(db.Model):
+	"""Store the shared app password hash for the login gate."""
+
+	__tablename__ = "app_access_config"
+
+	id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+	password_hash: Mapped[str] = mapped_column(Text, nullable=False)

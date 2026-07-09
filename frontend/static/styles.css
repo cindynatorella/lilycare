@@ -51,6 +51,7 @@ a {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -100,6 +101,10 @@ a {
   gap: 10px;
 }
 
+.header-logout {
+  margin-left: auto;
+}
+
 .site-nav a {
   padding: 10px 14px;
   border-radius: 999px;
@@ -135,6 +140,28 @@ a {
 .panel {
   border-radius: 28px;
   box-shadow: var(--shadow);
+}
+
+.auth-shell {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 180px);
+}
+
+.auth-card {
+  width: min(100%, 520px);
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  font-size: 2rem;
+}
+
+.auth-copy {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .intro-panel {
@@ -590,6 +617,11 @@ a {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .header-logout {
+    width: 100%;
+    margin-left: 0;
   }
 
   .hero-photo-wrap {
