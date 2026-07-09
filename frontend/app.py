@@ -22,12 +22,29 @@ from backend.models import AppAccessConfig
 
 from backend.models import Vaccine,VaccineHistoryEntry
 
+from datetime import timedelta
+
 import os
 
 # Build the Flask app, register routes, and connect the UI to session data.
 def create_app() -> Flask:
 	app = Flask(__name__)
-	app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fallback-secret")
+
+	secret_key = os.getenv("SECRET_KEY")
+
+	if not secret_key:
+		raise RuntimeError("SECRET_KEY is missing.")
+
+	app.config["SECRET_KEY"] = secret_key
+	
+	is_production = os.getenv("APP_ENV") == "production"
+
+	app.config.update(
+		SESSION_COOKIE_HTTPONLY=True,
+		SESSION_COOKIE_SECURE=is_production,
+		SESSION_COOKIE_SAMESITE="Lax",
+		PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
+	)
 
 	configure_database(app) #Connect to the db
 
