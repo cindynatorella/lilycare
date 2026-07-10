@@ -7,3 +7,5 @@ __pycache__
 .agents
 .env.prod
 .env.example
+*.dump
+.env.prodprod
